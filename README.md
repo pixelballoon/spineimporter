@@ -13,24 +13,26 @@ This library is still very much a work in progress, and only supports a limited 
 **Supported**
 * Bone hierarchy imported
 * Regions imported as Unity sprites
+* Meshes
 * Multiple skins
 * Animations imported as native Unity animations
 * Animation events
 * Supports native Unity Mechanim state machine blending etc...
 
-**Unsupported (for now)**
-* Skinned Meshes (next up!)
+**Coming soon**
+* Skinned meshes
 * Animation curve types
-* Everything else
+* Draw order
 
 **Known Issues**
-* Single frame animations have some issues within Unity, causing harmless errors to show in the log window when opened in the Animator
-* Animation curves don't exactly match those coming from Spine yet, as the curve type isn't checked
+* Single frame animations have some issues within Unity. It's harmless, but errors will show in the log window when the animation is opened in the Animator
+* Animation clips are leaked upon clicking refresh. This is harmless, but will cause a message when you save
+* Animation curves don't exactly match those coming from Spine yet, as the curve type isn't parsed
 
 **Limitations**
 * All images are placed in a folder called 'images' next to the spine JSON file
 * No atlases are imported (nor are there any plans to do so)
-* FFD likely won't ever be supported, as it's complex to implement within Unity's animation system, but skinned meshes will be
+* FFD may be supported via Unity blend shapes, but no promises
 
 Instructions
 ----
@@ -47,7 +49,6 @@ Refresh will update all animations, bones etc... If done on the prefab it will b
 
 Support
 ----
-
 No support is provided, as this library is purely for my personal use, but please do whatever you wish with the code.
 
 That said, pull requests/issues are welcome, I just can't promise I'll look at them in a timely manner.

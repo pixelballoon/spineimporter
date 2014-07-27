@@ -38,13 +38,21 @@ namespace SpineImporter
 
 		public void Clear()
 		{
+			transform.localPosition = Vector3.zero;
+			transform.localEulerAngles = Vector3.zero;
+			transform.localScale = Vector3.one;
+
 			DestroyImmediate(GetComponent<SpriteRenderer>());
+			DestroyImmediate(GetComponent<MeshRenderer>());
 			DestroyImmediate(GetComponent<SkinnedMeshRenderer>());
+			DestroyImmediate(GetComponent<MeshFilter>());
 		}
 		
 		public void SetAttachment(SpineAttachment attachment)
 		{
 			Clear();
+
+			transform.localPosition = new Vector3(0, 0, _drawOrder);
 
 			switch (attachment.Type)
 			{
@@ -52,8 +60,19 @@ namespace SpineImporter
 				{
 					SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
 					spriteRenderer.sprite = attachment.Sprite;
-					transform.localPosition = new Vector3(attachment.PositionOffset.x, attachment.PositionOffset.y, _drawOrder);
+					transform.localPosition += new Vector3(attachment.PositionOffset.x, attachment.PositionOffset.y, 0);
 					transform.localEulerAngles = new Vector3(0, 0, attachment.RotationOffset);
+					transform.localScale = new Vector3(100, 100, 1);
+					break;
+				}
+				case SpineAttachment.AttachmentType.Mesh:
+				{
+					MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+					MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+					meshFilter.sharedMesh = attachment.Mesh.Mesh;
+					Material material = new Material(Shader.Find("Unlit/Transparent"));
+					material.mainTexture = attachment.Texture;
+					meshRenderer.material = material;
 					break;
 				}
 			}

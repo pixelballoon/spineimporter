@@ -32,6 +32,32 @@ namespace SpineImporter
 			_name = name;
 		}
 	}
+	
+	[Serializable]
+	public class SpineMesh
+	{
+		[SerializeField] private Mesh _mesh;
+		[SerializeField] private Texture2D _texture;
+		[SerializeField] private Color _color;
+
+		public Mesh Mesh
+		{
+			get { return _mesh; }
+			set { _mesh = value; }
+		}
+
+		public Texture2D Texture
+		{
+			get { return _texture; }
+			set { _texture = value; }
+		}
+
+		public Color Color
+		{
+			get { return _color; }
+			set { _color = value; }
+		}
+	}
 
 	public class SpineSkeleton : MonoBehaviour
 	{
@@ -143,6 +169,11 @@ namespace SpineImporter
 			if (defaultSkin == null || activeSkin == null)
 				return;
 
+			for (int i = 0; i < slots.Length; i++)
+			{
+				slots[i].Clear();
+			}
+
 			if (defaultSkin != null)
 			{
 				SetSkin(slots, defaultSkin);
@@ -188,6 +219,15 @@ namespace SpineImporter
 		{
 			bool setSkin = string.IsNullOrEmpty(_activeSkin);
 
+			if (_skins == null)
+			{
+				_skins = new List<SpineSkin>();
+			}
+			else
+			{
+				_skins.Clear();
+			}
+
 			if (root.ContainsKey("skins"))
 			{
 				foreach (KeyValuePair<String, Object> entry in (Dictionary<String, Object>)root["skins"])
@@ -219,11 +259,6 @@ namespace SpineImporter
 
 		private SpineSkin GetSkin(string name, bool create = true)
 		{
-			if (_skins == null)
-			{
-				_skins = new List<SpineSkin>();
-			}
-
 			foreach (SpineSkin skin in _skins)
 			{
 				if (skin.Name == name)
@@ -285,6 +320,12 @@ namespace SpineImporter
 			return (Sprite)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite));
 		}
 
+		private Texture2D GetTexture(String name)
+		{
+			string assetPath = _imagePath + name + ".png";
+			return (Texture2D)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture2D));
+		}
+
 		private void ParseAttachment(string name, SpineSkin.Slot slot, Dictionary<String, Object> root)
 		{
 			switch (GetString(root, "type", "region"))
@@ -295,6 +336,25 @@ namespace SpineImporter
 					attachment.Sprite = GetSprite(GetString(root, "name", name));
 					attachment.PositionOffset = new Vector2(GetFloat(root, "x", 0f), GetFloat(root, "y", 0f));
 					attachment.RotationOffset = GetFloat(root, "rotation", 0f);
+					break;
+				}
+
+				case "mesh":
+				{
+					SpineMesh spineMesh = new SpineMesh();
+
+					Mesh mesh = new Mesh();
+					mesh.vertices = GetVector3Array(root, "vertices", 2);
+					mesh.triangles = GetIntArray(root, "triangles");
+					mesh.uv = GetVector2Array(root, "uvs");
+
+					spineMesh.Mesh = mesh;
+					spineMesh.Color = ToColor(GetString(root, "color", "ffffffff"));
+
+					SpineAttachment attachment = slot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Mesh);
+					attachment.Mesh = spineMesh;
+					attachment.Texture = GetTexture(GetString(root, "name", name));
+					
 					break;
 				}
 			}
@@ -326,9 +386,7 @@ namespace SpineImporter
 						slot = slotTransform.GetComponent<SpineSlot>();
 					}
 
-					slot.transform.localPosition = Vector3.zero;
-					slot.transform.localScale = new Vector3(100, 100, 1);
-
+					slot.Clear();
 					slot.DefaultAttachment = GetString(slotMap, "attachment", "");
 					slot.AdditiveBlending = GetBoolean(slotMap, "additive", false);
 					slot.Color = ToColor(GetString(slotMap, "color", "ffffffff"));
@@ -567,6 +625,42 @@ namespace SpineImporter
 		}
 		
 		// Helper functions taken from Spine-C# SkeletonJson.cs
+
+		private static Vector2[] GetVector2Array(Dictionary<String, Object> map, String name)
+		{
+			var list = (List<Object>)map[name];
+			var values = new Vector2[list.Count / 2];
+			
+			for (int i = 0, n = list.Count; i < n; i+=2)
+			{
+				values[i/2] = new Vector2((float)list[i], 1f - (float)list[i+1]);
+			}
+			
+			return values;
+		}
+
+		private static Vector3[] GetVector3Array(Dictionary<String, Object> map, String name, int stride)
+		{
+			var list = (List<Object>)map[name];
+			var values = new Vector3[list.Count / stride];
+
+			if (stride == 3)
+			{
+				for (int i = 0, n = list.Count; i < n; i+=3)
+				{
+					values[i/3] = new Vector3((float)list[i], (float)list[i+1], (float)list[i+2]);
+				}
+        	}
+			else if (stride == 2)
+			{
+				for (int i = 0, n = list.Count; i < n; i+=2)
+				{
+					values[i/2] = new Vector3((float)list[i], (float)list[i+1], 0);
+				}
+			}
+		
+			return values;
+		}
 		
 		private static float[] GetFloatArray(Dictionary<String, Object> map, String name, float scale)
 		{

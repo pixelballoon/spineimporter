@@ -12,6 +12,8 @@ namespace SpineImporter
 		[SerializeField, HideInInspector] private AttachmentType _type;
 		[SerializeField] private string _name;
 		[SerializeField] private Sprite _sprite;
+		[SerializeField] private SpineMesh _mesh;
+		[SerializeField] private Texture2D _texture;
 		[SerializeField] private Vector2 _positionOffset;
 		[SerializeField] private float _rotationOffset;
 
@@ -32,6 +34,18 @@ namespace SpineImporter
 			set { _sprite = value; }
 		}
 
+		public SpineMesh Mesh
+		{
+			get { return _mesh; }
+			set { _mesh = value; }
+		}
+
+		public Texture2D Texture
+		{
+			get { return _texture; }
+			set { _texture = value; }
+		}
+
 		public Vector2 PositionOffset
 		{
 			get { return _positionOffset; }
@@ -47,6 +61,7 @@ namespace SpineImporter
 		public enum AttachmentType
 		{
 			Region,
+			Mesh,
 			SkinnedMesh
 		}
 
