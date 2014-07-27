@@ -1,7 +1,6 @@
 Native Unity Spine Importer
 ====
 
-
 IMPORTANT: This code hasn't yet been tested outside my current project, so if there's any issues with compilation please let me know.
 
 About
@@ -16,11 +15,11 @@ This library is still very much a work in progress, and only supports a limited 
 * Regions imported as Unity sprites
 * Multiple skins
 * Animations imported as native Unity animations
+* Animation events
 * Supports native Unity Mechanim state machine blending etc...
 
 **Unsupported (for now)**
 * Skinned Meshes (next up!)
-* Events
 * Animation curve types
 * Everything else
 

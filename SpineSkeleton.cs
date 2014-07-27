@@ -13,6 +13,26 @@ using UnityEditor;
 namespace SpineImporter
 {
 
+	[Serializable]
+	public class SpineEvent
+	{
+		[SerializeField] private string _name;
+
+		public int IntParameter;
+		public float FloatParameter;
+		public string StringParameter;
+
+		public string Name
+		{
+			get { return _name; }
+		}
+
+		public SpineEvent(string name)
+		{
+			_name = name;
+		}
+	}
+
 	public class SpineSkeleton : MonoBehaviour
 	{
 
@@ -23,6 +43,7 @@ namespace SpineImporter
 		[SerializeField] private string _dataPath;
 		[SerializeField] private string _activeSkin;
 		[SerializeField] private List<SpineSkin> _skins;
+		[SerializeField] private List<SpineEvent> _events;
 
 		private Transform _skeleton;
 
@@ -87,6 +108,7 @@ namespace SpineImporter
 				ParseBones(root);
 				ParseSlots(root);
 				ParseSkins(root);
+				ParseEvents(root);
 				ParseAnimations(root);
 			}
 
@@ -220,6 +242,43 @@ namespace SpineImporter
 			return spineSkin;
 		}
 
+		private SpineEvent GetEvent(string name)
+		{
+			if (_events != null)
+			{
+				foreach (SpineEvent spineEvent in _events)
+				{
+					if (spineEvent.Name == name)
+					{
+						return spineEvent;
+					}
+				}
+			}
+
+			return null;
+		}
+
+		private void ParseEvents(Dictionary<String, Object> root)
+		{
+			if (root.ContainsKey("events"))
+			{
+				if (_events == null)
+				{
+					_events = new List<SpineEvent>();
+				}
+
+				foreach (KeyValuePair<String, Object> entry in (Dictionary<String, Object>)root["events"])
+				{
+					var entryMap = (Dictionary<String, Object>)entry.Value;
+					SpineEvent spineEvent = new SpineEvent(entry.Key);
+					spineEvent.IntParameter = GetInt(entryMap, "int", 0);
+					spineEvent.FloatParameter = GetFloat(entryMap, "float", 0);
+					spineEvent.StringParameter = GetString(entryMap, "string", null);
+					_events.Add(spineEvent);
+				}
+			}
+		}
+
 		private Sprite GetSprite(String name)
 		{
 			string assetPath = _imagePath + name + ".png";
@@ -305,6 +364,35 @@ namespace SpineImporter
 
 					ParseBoneTimelines(clip, bone, (Dictionary<String, Object>)entry.Value);
 				}
+			}
+
+			if (map.ContainsKey("events"))
+			{
+				var eventsMap = (List<Object>)map["events"];
+
+				List<AnimationEvent> animationEvents = new List<AnimationEvent>();
+
+				foreach (Dictionary<String, Object> eventMap in eventsMap)
+				{
+					string eventName = (string)eventMap["name"];
+
+					SpineEvent spineEvent = GetEvent(eventName);
+					if (spineEvent == null)
+					{
+						continue;
+					}
+
+					AnimationEvent animationEvent = new AnimationEvent();
+					animationEvent.time = (float)eventMap["time"];
+					animationEvent.functionName = eventName;
+					animationEvent.intParameter = GetInt(eventMap, "int", spineEvent.IntParameter);
+					animationEvent.floatParameter = GetFloat(eventMap, "float", spineEvent.FloatParameter);
+					animationEvent.stringParameter = GetString(eventMap, "string", spineEvent.StringParameter);
+
+					animationEvents.Add(animationEvent);
+				}
+
+				AnimationUtility.SetAnimationEvents(clip, animationEvents.ToArray());
 			}
 
 			UpdateClipSettings(clip);
