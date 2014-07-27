@@ -1,14 +1,12 @@
 Native Unity Spine Importer
 ====
 
-IMPORTANT: This code hasn't yet been tested outside my current project, so if there's any issues with compilation please let me know.
-
-About
-----
-
 Imports Esoteric Software's Spine data into native Unity animations
 
 This library is still very much a work in progress, and only supports a limited number of Spine's features so far.
+
+Features
+----
 
 **Supported**
 * Bone hierarchy imported
@@ -29,11 +27,16 @@ This library is still very much a work in progress, and only supports a limited 
 * Single frame animations have some issues within Unity. It's harmless, but errors will show in the log window when the animation is opened in the Animator
 * Animation clips are leaked upon clicking refresh. This is harmless, but will cause a message when you save
 * Animation curves don't exactly match those coming from Spine yet, as the curve type isn't parsed
+* Meshes don't animate correctly when the root is scaled with a negative scale
 
 **Limitations**
 * All images are placed in a folder called 'images' next to the spine JSON file
 * No atlases are imported (nor are there any plans to do so)
 * FFD may be supported via Unity blend shapes, but no promises
+
+**Warnings**
+* This code hasn't yet been tested outside my current project, so if there's any issues with compilation or usage please let me know
+* Some functionality relies on using internal Unity Editor classes, as until they're officially supported there's no other choice. While this works with my current Unity version (4.5.2) there's always a small possibility it may break in a future release. In this case I'll fix it up as soon as I can, as I always try to use the latest Unity releases where possible
 
 Instructions
 ----
