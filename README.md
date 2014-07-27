@@ -19,10 +19,11 @@ This library is still very much a work in progress, and only supports a limited 
 * Animation events
 * Supports native Unity Mechanim state machine blending etc...
 
-**Coming soon**
+**Coming soon (in approximate order)**
 * Skinned meshes
 * Animation curve types
 * Draw order
+* Attachment swapping animation
 
 **Known Issues**
 * Single frame animations have some issues within Unity. It's harmless, but errors will show in the log window when the animation is opened in the Animator
