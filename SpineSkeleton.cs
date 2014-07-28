@@ -1,10 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System;
 using Object = System.Object;
 using System.IO;
-using System.Reflection;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -38,6 +36,7 @@ namespace SpineImporter
 	{
 		[SerializeField] private Mesh _mesh;
 		[SerializeField] private Texture2D _texture;
+		[SerializeField] private Transform[] _bones;
 		[SerializeField] private Color _color;
 
 		public Mesh Mesh
@@ -50,6 +49,12 @@ namespace SpineImporter
 		{
 			get { return _texture; }
 			set { _texture = value; }
+		}
+
+		public Transform[] Bones
+		{
+			get { return _bones; }
+			set { _bones = value; }
 		}
 
 		public Color Color
@@ -187,6 +192,8 @@ namespace SpineImporter
 
 		private void ParseBones(Dictionary<String, Object> root)
 		{
+			int index = 0;
+
 			foreach (Dictionary<String, Object> boneMap in (List<Object>)root["bones"])
 			{
 				string boneName = GetString(boneMap, "name", "");
@@ -211,7 +218,10 @@ namespace SpineImporter
 				{
 					spineBone = bone.gameObject.AddComponent<SpineBone>();
 				}
+				spineBone.Index = index;
 				spineBone.Length = GetFloat(boneMap, "length", 0);
+
+				index++;
 			}
 		}
 
@@ -255,6 +265,21 @@ namespace SpineImporter
 					}
 				}
 			}
+		}
+
+		private SpineSlot GetSlot(string name)
+		{
+			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
+
+			foreach (SpineSlot slot in slots)
+			{
+				if (slot.name == name + " [slot]")
+				{
+					return slot;
+				}
+			}
+
+			return null;
 		}
 
 		private SpineSkin GetSkin(string name, bool create = true)
@@ -326,13 +351,28 @@ namespace SpineImporter
 			return (Texture2D)AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture2D));
 		}
 
-		private void ParseAttachment(string name, SpineSkin.Slot slot, Dictionary<String, Object> root)
+		private SpineBone FindBoneByIndex(int index)
+		{
+			SpineBone[] bones = _skeleton.GetComponentsInChildren<SpineBone>();
+
+			foreach (SpineBone bone in bones)
+			{
+				if (bone.Index == index)
+				{
+					return bone;
+				}
+			}
+
+			return null;
+		}
+
+		private void ParseAttachment(string name, SpineSkin.Slot skinSlot, Dictionary<String, Object> root)
 		{
 			switch (GetString(root, "type", "region"))
 			{
 				case "region":
 				{
-					SpineAttachment attachment = slot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Region);
+					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Region);
 					attachment.Sprite = GetSprite(GetString(root, "name", name));
 					attachment.PositionOffset = new Vector2(GetFloat(root, "x", 0f), GetFloat(root, "y", 0f));
 					attachment.RotationOffset = GetFloat(root, "rotation", 0f);
@@ -341,20 +381,123 @@ namespace SpineImporter
 
 				case "mesh":
 				{
-					SpineMesh spineMesh = new SpineMesh();
-
 					Mesh mesh = new Mesh();
 					mesh.vertices = GetVector3Array(root, "vertices", 2);
-					mesh.triangles = GetIntArray(root, "triangles");
 					mesh.uv = GetVector2Array(root, "uvs");
+					mesh.triangles = GetIntArray(root, "triangles");
 
+					SpineMesh spineMesh = new SpineMesh();
 					spineMesh.Mesh = mesh;
 					spineMesh.Color = ToColor(GetString(root, "color", "ffffffff"));
+					spineMesh.Texture = GetTexture(GetString(root, "name", name));
 
-					SpineAttachment attachment = slot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Mesh);
+					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Mesh);
 					attachment.Mesh = spineMesh;
-					attachment.Texture = GetTexture(GetString(root, "name", name));
 					
+					break;
+				}
+
+				case "skinnedmesh":
+				{
+					SpineSlot slot = GetSlot(name);
+
+					Vector2[] uvs = GetVector2Array(root, "uvs");
+					int[] triangles = GetIntArray(root, "triangles");
+					List<Vector3> vertices = new List<Vector3>(uvs.Length);
+					float[] meshData = GetFloatArray(root, "vertices", 1);
+					
+					List<BoneWeight> weights = new List<BoneWeight>();
+
+					List<Transform> bones = new List<Transform>();
+					
+					for (int i = 0, n = meshData.Length; i < n; )
+					{
+						int boneCount = (int)meshData[i++];
+
+						BoneWeight boneWeight = new BoneWeight();
+
+						for (int j = 0; j < boneCount; j++)
+						{
+							int globalBoneIndex = (int)meshData[i];
+
+							SpineBone bone = FindBoneByIndex(globalBoneIndex);
+
+							float x = meshData[i + 1];
+							float y = meshData[i + 2];
+							float weight = meshData[i + 3];
+
+							int boneIndex;
+							if (bones.Contains(bone.transform))
+							{
+								boneIndex = bones.IndexOf(bone.transform);
+							}
+							else
+							{
+								boneIndex = bones.Count;
+								bones.Add(bone.transform);
+							}
+							
+							if (j == 0)
+							{
+								Vector3 position = bone.transform.TransformPoint(x, y, slot.DrawOrder);
+								vertices.Add(position);
+							}
+
+							switch (j)
+							{
+								case 0:
+								{
+									boneWeight.boneIndex0 = boneIndex;
+									boneWeight.weight0 = weight;
+									break;
+								}
+								case 1:
+								{
+									boneWeight.boneIndex1 = boneIndex;
+									boneWeight.weight1 = weight;
+									break;
+								}
+								case 2:
+								{
+									boneWeight.boneIndex2 = boneIndex;
+									boneWeight.weight2 = weight;
+									break;
+								}
+								case 3:
+								{
+									boneWeight.boneIndex3 = boneIndex;
+									boneWeight.weight3 = weight;
+									break;
+								}
+							}
+							
+							i += 4;
+						}
+
+						weights.Add(boneWeight);
+					}
+					
+					Mesh mesh = new Mesh();
+					mesh.vertices = vertices.ToArray();
+					mesh.uv = uvs;
+					mesh.triangles = triangles;
+					mesh.boneWeights = weights.ToArray();
+					Matrix4x4[] bindPoses = new Matrix4x4[bones.Count];
+					for (int i = 0; i < bones.Count; i++)
+					{
+						bindPoses[i] = bones[i].worldToLocalMatrix;
+					}
+					mesh.bindposes = bindPoses;
+
+					SpineMesh spineMesh = new SpineMesh();
+					spineMesh.Mesh = mesh;
+					spineMesh.Color = ToColor(GetString(root, "color", "ffffffff"));
+					spineMesh.Texture = GetTexture(GetString(root, "name", name));
+					spineMesh.Bones = bones.ToArray();
+
+					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.SkinnedMesh);
+					attachment.Mesh = spineMesh;
+
 					break;
 				}
 			}
@@ -475,7 +618,7 @@ namespace SpineImporter
 		{
 			foreach (KeyValuePair<String, Object> timelineEntry in timelineMap)
 			{
-				var timelineName = (String)timelineEntry.Key;
+				string timelineName = timelineEntry.Key;
 				var values = (List<Object>)timelineEntry.Value;
 
 				switch (timelineName)
@@ -558,8 +701,6 @@ namespace SpineImporter
 
 			return clip;
 		}
-
-
 		
 		private void UpdateClipSettings(AnimationClip clip)
 		{
@@ -624,8 +765,6 @@ namespace SpineImporter
 			return null;
 		}
 		
-		// Helper functions taken from Spine-C# SkeletonJson.cs
-
 		private static Vector2[] GetVector2Array(Dictionary<String, Object> map, String name)
 		{
 			var list = (List<Object>)map[name];
@@ -662,71 +801,75 @@ namespace SpineImporter
 			return values;
 		}
 		
-		private static float[] GetFloatArray(Dictionary<String, Object> map, String name, float scale)
-		{
-			var list = (List<Object>)map[name];
-			var values = new float[list.Count];
-			if (scale == 1)
-			{
-				for (int i = 0, n = list.Count; i < n; i++)
-					values[i] = (float)list[i];
-			}
-			else
-			{
-				for (int i = 0, n = list.Count; i < n; i++)
-					values[i] = (float)list[i] * scale;
-			}
-			return values;
-		}
-		
-		private static int[] GetIntArray(Dictionary<String, Object> map, String name)
-		{
-			var list = (List<Object>)map[name];
-			var values = new int[list.Count];
-			for (int i = 0, n = list.Count; i < n; i++)
-				values[i] = (int)(float)list[i];
-			return values;
-		}
-		
-		private static float GetFloat(Dictionary<String, Object> map, String name, float defaultValue)
-		{
-			if (!map.ContainsKey(name))
-				return defaultValue;
-			return (float)map[name];
-		}
-		
-		private static int GetInt(Dictionary<String, Object> map, String name, int defaultValue)
-		{
-			if (!map.ContainsKey(name))
-				return defaultValue;
-			return (int)(float)map[name];
-		}
-		
-		private static bool GetBoolean(Dictionary<String, Object> map, String name, bool defaultValue)
-		{
-			if (!map.ContainsKey(name))
-				return defaultValue;
-			return (bool)map[name];
-		}
-		
-		private static String GetString(Dictionary<String, Object> map, String name, String defaultValue)
-		{
-			if (!map.ContainsKey(name))
-				return defaultValue;
-			return (String)map[name];
-		}
-
 		public static Color ToColor(string hexString)
 		{
 			return new Color(ToColor(hexString, 0), ToColor(hexString, 1), ToColor(hexString, 2), ToColor(hexString, 3));
 		}
-		
+
+		#region Helper functions taken from Spine-C# SkeletonJson.cs
+
+		private static float[] GetFloatArray(Dictionary<String, Object> map, String name, float scale)
+		{
+			var list = (List<Object>) map[name];
+			var values = new float[list.Count];
+			if (scale == 1)
+			{
+				for (int i = 0, n = list.Count; i < n; i++)
+					values[i] = (float) list[i];
+			}
+			else
+			{
+				for (int i = 0, n = list.Count; i < n; i++)
+					values[i] = (float) list[i] * scale;
+			}
+			return values;
+		}
+
+		private static int[] GetIntArray(Dictionary<String, Object> map, String name)
+		{
+			var list = (List<Object>) map[name];
+			var values = new int[list.Count];
+			for (int i = 0, n = list.Count; i < n; i++)
+				values[i] = (int) (float) list[i];
+			return values;
+		}
+
+		private static float GetFloat(Dictionary<String, Object> map, String name, float defaultValue)
+		{
+			if (!map.ContainsKey(name))
+				return defaultValue;
+			return (float) map[name];
+		}
+
+		private static int GetInt(Dictionary<String, Object> map, String name, int defaultValue)
+		{
+			if (!map.ContainsKey(name))
+				return defaultValue;
+			return (int) (float) map[name];
+		}
+
+		private static bool GetBoolean(Dictionary<String, Object> map, String name, bool defaultValue)
+		{
+			if (!map.ContainsKey(name))
+				return defaultValue;
+			return (bool) map[name];
+		}
+
+		private static String GetString(Dictionary<String, Object> map, String name, String defaultValue)
+		{
+			if (!map.ContainsKey(name))
+				return defaultValue;
+			return (String) map[name];
+		}
+
 		public static float ToColor(String hexString, int colorIndex)
 		{
 			if (hexString.Length != 8)
 				throw new ArgumentException("Color hexidecimal length must be 8, recieved: " + hexString);
-			return Convert.ToInt32(hexString.Substring(colorIndex * 2, 2), 16) / (float)255;
+			return Convert.ToInt32(hexString.Substring(colorIndex * 2, 2), 16) / (float) 255;
 		}
+
+		#endregion
 
 	}
 

@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 namespace SpineImporter
 {
@@ -71,8 +70,18 @@ namespace SpineImporter
 					MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 					meshFilter.sharedMesh = attachment.Mesh.Mesh;
 					Material material = new Material(Shader.Find("Unlit/Transparent"));
-					material.mainTexture = attachment.Texture;
+					material.mainTexture = attachment.Mesh.Texture;
 					meshRenderer.material = material;
+					break;
+				}
+				case SpineAttachment.AttachmentType.SkinnedMesh:
+				{
+					SkinnedMeshRenderer meshRenderer = gameObject.AddComponent<SkinnedMeshRenderer>();
+					Material material = new Material(Shader.Find("Unlit/Transparent"));
+					material.mainTexture = attachment.Mesh.Texture;
+					meshRenderer.material = material;
+					meshRenderer.bones = attachment.Mesh.Bones;
+					meshRenderer.sharedMesh = attachment.Mesh.Mesh;
 					break;
 				}
 			}

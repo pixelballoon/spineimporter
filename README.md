@@ -12,13 +12,13 @@ Features
 * Bone hierarchy imported
 * Regions imported as Unity sprites
 * Meshes
+* Skinned meshes
 * Multiple skins
 * Animations imported as native Unity animations
 * Animation events
 * Supports native Unity Mechanim state machine blending etc...
 
 **Coming soon (in approximate order)**
-* Skinned meshes
 * Animation curve types
 * Draw order
 * Attachment swapping animation
@@ -27,7 +27,7 @@ Features
 * Single frame animations have some issues within Unity. It's harmless, but errors will show in the log window when the animation is opened in the Animator
 * Animation clips are leaked upon clicking refresh. This is harmless, but will cause a message when you save
 * Animation curves don't exactly match those coming from Spine yet, as the curve type isn't parsed
-* Meshes don't animate correctly when the root is scaled with a negative scale
+* Unskinned meshes don't animate correctly when the root is scaled with a negative scale
 
 **Limitations**
 * All images are placed in a folder called 'images' next to the spine JSON file
