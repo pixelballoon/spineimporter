@@ -61,7 +61,7 @@ namespace SpineImporter
 					spriteRenderer.sprite = attachment.Sprite;
 					transform.localPosition += new Vector3(attachment.PositionOffset.x, attachment.PositionOffset.y, 0);
 					transform.localEulerAngles = new Vector3(0, 0, attachment.RotationOffset);
-					transform.localScale = new Vector3(100, 100, 1);
+					transform.localScale = new Vector3(100 * attachment.ScaleOffset.x, 100 * attachment.ScaleOffset.y, 1);
 					break;
 				}
 				case SpineAttachment.AttachmentType.Mesh:

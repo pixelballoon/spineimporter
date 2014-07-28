@@ -13,6 +13,7 @@ namespace SpineImporter
 		[SerializeField] private Sprite _sprite;
 		[SerializeField] private SpineMesh _mesh;
 		[SerializeField] private Vector2 _positionOffset;
+		[SerializeField] private Vector2 _scaleOffset;
 		[SerializeField] private float _rotationOffset;
 
 		public AttachmentType Type
@@ -42,6 +43,11 @@ namespace SpineImporter
 		{
 			get { return _positionOffset; }
 			set { _positionOffset = value; }
+		}
+		public Vector2 ScaleOffset
+		{
+			get { return _scaleOffset; }
+			set { _scaleOffset = value; }
 		}
 		
 		public float RotationOffset

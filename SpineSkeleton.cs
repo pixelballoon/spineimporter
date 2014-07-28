@@ -375,6 +375,7 @@ namespace SpineImporter
 					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Region);
 					attachment.Sprite = GetSprite(GetString(root, "name", name));
 					attachment.PositionOffset = new Vector2(GetFloat(root, "x", 0f), GetFloat(root, "y", 0f));
+					attachment.ScaleOffset = new Vector2(GetFloat(root, "scaleX", 0f), GetFloat(root, "scaleY", 0f));
 					attachment.RotationOffset = GetFloat(root, "rotation", 0f);
 					break;
 				}
