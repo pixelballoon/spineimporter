@@ -607,7 +607,7 @@ namespace SpineImporter
 
 		private string GetPathInternal(Transform t)
 		{
-			if (t == null || t.parent == null)
+			if (t == null || t.parent == null || t.GetComponent<SpineSkeleton>() != null)
 			{
 				return "";
 			}
