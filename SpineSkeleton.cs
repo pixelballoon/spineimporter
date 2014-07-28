@@ -68,8 +68,8 @@ namespace SpineImporter
 	{
 
 		[SerializeField] private TextAsset _sourceData;
-		[SerializeField] private float _scale = 0.05f;
-		[SerializeField] private float _drawOrderOffset = -0.01f;
+		[SerializeField] private float _scale = 0.01f;
+		[SerializeField] private float _drawOrderOffset = -1f;
 		[SerializeField] private string _imagePath;
 		[SerializeField] private string _dataPath;
 		[SerializeField] private string _activeSkin;
@@ -656,21 +656,40 @@ namespace SpineImporter
 					{
 						AnimationCurve x = new AnimationCurve();
 						AnimationCurve y = new AnimationCurve();
-						
-						Vector3 offset = (timelineName == "translate") ? bone.localPosition : bone.localScale;
-						
-						foreach (Dictionary<String, Object> valueMap in values)
+						AnimationCurve z = new AnimationCurve();
+
+						string propertyName;
+
+						if (timelineName == "scale")
 						{
-							float time = (float)valueMap["time"];
-							
-							x.AddKey(new Keyframe(time, (float)valueMap["x"] + offset.x));
-							y.AddKey(new Keyframe(time, (float)valueMap["y"] + offset.y));
+							propertyName = "localScale";
+
+							foreach (Dictionary<String, Object> valueMap in values)
+							{
+								float time = (float) valueMap["time"];
+
+								x.AddKey(new Keyframe(time, (float) valueMap["x"] * bone.localScale.x));
+								y.AddKey(new Keyframe(time, (float) valueMap["y"] * bone.localScale.y));
+								z.AddKey(new Keyframe(time, bone.localScale.z));
+							}
 						}
-						
-						string propertyName = "local" + (timelineName == "translate" ? "Position" : "Scale");
-						
+						else
+						{
+							propertyName = "localPosition";
+
+							foreach (Dictionary<String, Object> valueMap in values)
+							{
+								float time = (float)valueMap["time"];
+
+								x.AddKey(new Keyframe(time, (float)valueMap["x"] + bone.localPosition.x));
+								y.AddKey(new Keyframe(time, (float)valueMap["y"] + bone.localPosition.y));
+								z.AddKey(new Keyframe(time, bone.localPosition.z));
+							}
+						}
+
 						clip.SetCurve(GetPath(bone), typeof(Transform), propertyName + ".x", x);
 						clip.SetCurve(GetPath(bone), typeof(Transform), propertyName + ".y", y);
+						clip.SetCurve(GetPath(bone), typeof(Transform), propertyName + ".z", z);
 
 						break;
 					}

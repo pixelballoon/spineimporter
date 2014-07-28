@@ -20,7 +20,7 @@ namespace SpineImporter
 		[MenuItem("Assets/Spine/Import")]
 		public static void Import()
 		{
-			UnityEngine.Object file = Selection.activeObject;
+			Object file = Selection.activeObject;
 			TextAsset text = Selection.activeObject as TextAsset;
 
 			if (!text)
@@ -33,9 +33,8 @@ namespace SpineImporter
 
 			string name = Path.GetFileNameWithoutExtension(prefabPath);
 
-			string rootPath = Path.GetDirectoryName(prefabPath) + "/";
-			string imagePath = rootPath + "images/";
-			string dataPath = rootPath + name + "_data/";
+			string imagePath = assetPath + "/images/";
+			string dataPath = Path.GetDirectoryName(prefabPath) + "/" + name + "_data/";
 
 			if (!Directory.Exists(Application.dataPath + dataPath.Substring(6)))
 			{
@@ -73,7 +72,7 @@ namespace SpineImporter
 				PrefabUtility.CreatePrefab(prefabPath, rootGo);
 			}
 			
-			UnityEngine.Object.DestroyImmediate(rootGo);
+			Object.DestroyImmediate(rootGo);
 		}
 
 		#endif
