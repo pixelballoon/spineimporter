@@ -730,7 +730,10 @@ namespace SpineImporter
 			
 			AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
 			settings.loopTime = true;
-			settings.stopTime = clip.length;
+			settings.startTime = 0f;
+			// If animation is a single keyframe then make sure stop time is a small value rather than 0,
+			// as Unity will otherwise default to an animation length of 1 second
+			settings.stopTime = Mathf.Max(clip.length, 0.01f);
 
 			SpineUtilities.SetAnimationSettings(clip, settings);
 
