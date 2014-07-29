@@ -554,7 +554,9 @@ namespace SpineImporter
 
 		private void ParseAnimation(String name, Dictionary<String, Object> map)
 		{
-			AnimationClip clip = GetAndClearAnimationClip(name);
+			bool isNewClip = false;
+
+			AnimationClip clip = GetAndClearAnimationClip(name, ref isNewClip);
 
 			if (map.ContainsKey("bones"))
 			{
@@ -597,7 +599,7 @@ namespace SpineImporter
 				AnimationUtility.SetAnimationEvents(clip, animationEvents.ToArray());
 			}
 
-			UpdateClipSettings(clip);
+			UpdateClipSettings(clip, isNewClip);
 		}
 
 		private string GetPath(Transform t)
@@ -700,7 +702,7 @@ namespace SpineImporter
 			clip.EnsureQuaternionContinuity();
 		}
 
-		private AnimationClip GetAndClearAnimationClip(string name)
+		private AnimationClip GetAndClearAnimationClip(string name, ref bool isNew)
 		{
 			string animPath = _dataPath + name + ".anim";
 
@@ -709,6 +711,8 @@ namespace SpineImporter
 			if (!clip)
 			{
 				clip = new AnimationClip();
+
+				isNew = true;
 
 				AssetDatabase.CreateAsset(clip, animPath);
 			}
@@ -722,7 +726,7 @@ namespace SpineImporter
 			return clip;
 		}
 		
-		private void UpdateClipSettings(AnimationClip clip)
+		private void UpdateClipSettings(AnimationClip clip, bool isNewClip)
 		{
 			clip.wrapMode = WrapMode.Loop;
 			
@@ -740,24 +744,11 @@ namespace SpineImporter
 			// Add animation clip to layer 0 of the animator controller
 			UnityEditorInternal.AnimatorController controller = transform.GetComponent<Animator>().runtimeAnimatorController as UnityEditorInternal.AnimatorController;
 			
-			if (controller)
+			if (controller && isNewClip)
 			{
 				UnityEditorInternal.StateMachine stateMachine = controller.GetLayer(0).stateMachine;
 				
-				bool hasClip = false;
-				
-				for (int i = 0; i < stateMachine.stateCount; i++)
-				{
-					if (stateMachine.GetState(i).GetMotion() == clip)
-					{
-						hasClip = true;
-					}
-				}
-				
-				if (!hasClip)
-				{
-					UnityEditorInternal.AnimatorController.AddAnimationClipToController(controller, clip);
-				}
+				UnityEditorInternal.AnimatorController.AddAnimationClipToController(controller, clip);
 			}
 		}
 
