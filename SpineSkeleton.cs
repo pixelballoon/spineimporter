@@ -746,8 +746,6 @@ namespace SpineImporter
 			
 			if (controller && isNewClip)
 			{
-				UnityEditorInternal.StateMachine stateMachine = controller.GetLayer(0).stateMachine;
-				
 				UnityEditorInternal.AnimatorController.AddAnimationClipToController(controller, clip);
 			}
 		}
