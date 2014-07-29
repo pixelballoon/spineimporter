@@ -14,6 +14,7 @@ Features
 * Meshes
 * Skinned meshes
 * Multiple skins
+* Attachment keyframing
 * Animations imported as native Unity animations
 * Animation events
 * Supports native Unity Mechanim state machine blending etc...
@@ -21,7 +22,6 @@ Features
 **Coming soon (in approximate order)**
 * Animation curve types
 * Draw order
-* Attachment swapping animation
 
 **Known Issues**
 * Single frame animations have some issues within Unity. It's harmless, but errors will show in the log window when the animation is opened in the Animator
@@ -36,7 +36,7 @@ Features
 
 **Warnings**
 * This code hasn't yet been tested outside my current project, so if there's any issues with compilation or usage please let me know
-* Some functionality relies on using internal Unity Editor classes, as until they're officially supported there's no other choice. While this works with my current Unity version (4.5.2) there's always a small possibility it may break in a future release. In this case I'll fix it up as soon as I can, as I always try to use the latest Unity releases where possible
+* Some functionality relies on using internal Unity Editor classes, as until they're officially supported there's no other choice. While this works with my current Unity version (4.5.2p2) there's always a small possibility it may break in a future release. In this case I'll fix it up as soon as I can, as I always try to use the latest Unity releases where possible
 
 Instructions
 ----
