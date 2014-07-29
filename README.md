@@ -41,11 +41,12 @@ Features
 Instructions
 ----
 
-1. Place the exported json anywhere within your Unity assets directory
+1. Export a json file from spine, and place it anywhere within your Unity assets directory
 2. Place all images that the animation requires in a folder named 'images' alongside it
-3. Right click on the json within the project window
-4. Drag prefab into scene
-5. Done!
+3. Right click on the json within the project window, and click "Spine/Import" in the context menu
+4. Drag the created prefab into scene
+5. Open the native Unity Animator window and use that as you would any animation created within Unity
+6. Done!
 
 If you want to change the skin, simply change the text in the 'active skin' field and hit Refresh
 
