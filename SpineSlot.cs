@@ -35,58 +35,14 @@ namespace SpineImporter
 			set { _drawOrder = value; }
 		}
 
-		public void Clear()
+		public void SetAttachment(string name)
 		{
-			transform.localPosition = Vector3.zero;
-			transform.localEulerAngles = Vector3.zero;
-			transform.localScale = Vector3.one;
-
-			DestroyImmediate(GetComponent<SpriteRenderer>());
-			DestroyImmediate(GetComponent<MeshRenderer>());
-			DestroyImmediate(GetComponent<SkinnedMeshRenderer>());
-			DestroyImmediate(GetComponent<MeshFilter>());
-		}
-		
-		public void SetAttachment(SpineAttachment attachment)
-		{
-			Clear();
-
-			transform.localPosition = new Vector3(0, 0, _drawOrder);
-
-			switch (attachment.Type)
+			for (int i = 0; i < transform.childCount; i++)
 			{
-				case SpineAttachment.AttachmentType.Region:
-				{
-					SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
-					spriteRenderer.sprite = attachment.Sprite;
-					transform.localPosition += new Vector3(attachment.PositionOffset.x, attachment.PositionOffset.y, 0);
-					transform.localEulerAngles = new Vector3(0, 0, attachment.RotationOffset);
-					transform.localScale = new Vector3(100 * attachment.ScaleOffset.x, 100 * attachment.ScaleOffset.y, 1);
-					break;
-				}
-				case SpineAttachment.AttachmentType.Mesh:
-				{
-					MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-					MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
-					meshFilter.sharedMesh = attachment.Mesh.Mesh;
-					Material material = new Material(Shader.Find("Unlit/Transparent"));
-					material.mainTexture = attachment.Mesh.Texture;
-					meshRenderer.material = material;
-					break;
-				}
-				case SpineAttachment.AttachmentType.SkinnedMesh:
-				{
-					SkinnedMeshRenderer meshRenderer = gameObject.AddComponent<SkinnedMeshRenderer>();
-					Material material = new Material(Shader.Find("Unlit/Transparent"));
-					material.mainTexture = attachment.Mesh.Texture;
-					meshRenderer.material = material;
-					meshRenderer.bones = attachment.Mesh.Bones;
-					meshRenderer.sharedMesh = attachment.Mesh.Mesh;
-					break;
-				}
+				Transform attachment = transform.GetChild(i);
+				attachment.gameObject.SetActive(attachment.name == name);
 			}
 		}
-
 	}
 
 }

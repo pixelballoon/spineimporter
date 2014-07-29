@@ -73,7 +73,6 @@ namespace SpineImporter
 		[SerializeField] private string _imagePath;
 		[SerializeField] private string _dataPath;
 		[SerializeField] private string _activeSkin;
-		[SerializeField] private List<SpineSkin> _skins;
 		[SerializeField] private List<SpineEvent> _events;
 
 		private Transform _skeleton;
@@ -126,6 +125,8 @@ namespace SpineImporter
 				_skeleton.parent = transform;
 			}
 
+			_skeleton.localPosition = Vector3.zero;
+			_skeleton.localRotation = Quaternion.identity;
 			_skeleton.localScale = Vector3.one * _scale;
 			
 			using (TextReader reader = new StringReader(_sourceData.text))
@@ -146,47 +147,20 @@ namespace SpineImporter
 			SetSkin(_activeSkin);
 		}
 
-		private void SetSkin(SpineSlot[] slots, SpineSkin skin)
-		{
-			foreach (SpineSkin.Slot slot in skin.Slots)
-			{
-				for (int i = 0; i < slots.Length; i++)
-				{
-					if (slots[i].name == (slot.Name + " [slot]"))
-					{
-						SpineAttachment attachment = slot.GetAttachment(slots[i].DefaultAttachment);
-						if (attachment != null)
-						{
-							slots[i].SetAttachment(attachment);
-						}
-					}
-				}
-			}
-		}
-
 		public void SetSkin(string name)
 		{
 			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
 
-			SpineSkin defaultSkin = GetSkin("default", false);
-			SpineSkin activeSkin = GetSkin(_activeSkin, false);
-
-			if (defaultSkin == null || activeSkin == null)
-				return;
-
-			for (int i = 0; i < slots.Length; i++)
+			foreach (SpineSlot slot in slots)
 			{
-				slots[i].Clear();
+				slot.SetAttachment(slot.DefaultAttachment);
 			}
 
-			if (defaultSkin != null)
-			{
-				SetSkin(slots, defaultSkin);
-			}
+			SpineSkinPlaceholder[] skinPlaceholders = GetComponentsInChildren<SpineSkinPlaceholder>();
 
-			if (activeSkin != null)
+			foreach (SpineSkinPlaceholder skinPlaceholder in skinPlaceholders)
 			{
-				SetSkin(slots, activeSkin);
+				skinPlaceholder.SetSkin(name);
 			}
 		}
 
@@ -227,15 +201,9 @@ namespace SpineImporter
 
 		private void ParseSkins(Dictionary<String, Object> root)
 		{
-			bool setSkin = string.IsNullOrEmpty(_activeSkin);
-
-			if (_skins == null)
+			if (string.IsNullOrEmpty(_activeSkin))
 			{
-				_skins = new List<SpineSkin>();
-			}
-			else
-			{
-				_skins.Clear();
+				_activeSkin = "default";
 			}
 
 			if (root.ContainsKey("skins"))
@@ -244,24 +212,15 @@ namespace SpineImporter
 				{
 					string skinName = entry.Key;
 
-					SpineSkin skin = GetSkin(skinName);
-
 					foreach (KeyValuePair<String, Object> slotEntry in (Dictionary<String, Object>)entry.Value)
 					{
 						string slotName = slotEntry.Key;
 
-						SpineSkin.Slot slot = skin.GetSlot(slotName);
-
 						foreach (KeyValuePair<String, Object> attachmentEntry in ((Dictionary<String, Object>)slotEntry.Value))
 						{
 							string attachmentName = attachmentEntry.Key;
-							ParseAttachment(attachmentName, slot, (Dictionary<String, Object>)attachmentEntry.Value);
+							ParseAttachment(skinName, slotName, attachmentName, (Dictionary<String, Object>)attachmentEntry.Value);
 						}
-					}
-
-					if (setSkin == true && (string.IsNullOrEmpty(_activeSkin) || skinName == "default"))
-					{
-						_activeSkin = skinName;
 					}
 				}
 			}
@@ -280,26 +239,6 @@ namespace SpineImporter
 			}
 
 			return null;
-		}
-
-		private SpineSkin GetSkin(string name, bool create = true)
-		{
-			foreach (SpineSkin skin in _skins)
-			{
-				if (skin.Name == name)
-				{
-					return skin;
-				}
-			}
-
-			if (!create)
-			{
-				return null;
-			}
-
-			SpineSkin spineSkin = new SpineSkin(name);
-			_skins.Add(spineSkin);
-			return spineSkin;
 		}
 
 		private SpineEvent GetEvent(string name)
@@ -366,17 +305,78 @@ namespace SpineImporter
 			return null;
 		}
 
-		private void ParseAttachment(string name, SpineSkin.Slot skinSlot, Dictionary<String, Object> root)
+		public SpineAttachment GetOrCreateAttachment(string skinName, string slotName, string attachmentName, SpineAttachment.AttachmentType type)
+		{
+			SpineSlot slot = GetSlot(slotName);
+
+			SpineAttachment spineAttachment = null;
+
+			if (skinName == "default")
+			{
+				Transform attachmentTransform = slot.transform.FindChild(attachmentName);
+
+				if (attachmentTransform == null)
+				{
+					attachmentTransform = new GameObject(attachmentName).transform;
+					attachmentTransform.parent = slot.transform;
+					spineAttachment = attachmentTransform.gameObject.AddComponent<SpineAttachment>();
+				}
+				else
+				{
+					spineAttachment = attachmentTransform.GetComponent<SpineAttachment>();
+				}
+
+				attachmentTransform.localPosition = Vector3.zero;
+				attachmentTransform.localRotation = Quaternion.identity;
+				attachmentTransform.localScale = Vector3.one;
+			}
+			else
+			{
+				Transform attachmentTransform = slot.transform.Find(attachmentName);
+				if (attachmentTransform == null)
+				{
+					attachmentTransform = new GameObject(attachmentName).transform;
+					attachmentTransform.parent = slot.transform;
+					attachmentTransform.gameObject.AddComponent<SpineSkinPlaceholder>();
+				}
+
+				attachmentTransform.localPosition = Vector3.zero;
+				attachmentTransform.localRotation = Quaternion.identity;
+				attachmentTransform.localScale = Vector3.one;
+				
+				Transform skinAttachmentTransform = attachmentTransform.FindChild(skinName);
+
+				if (skinAttachmentTransform == null)
+				{
+					skinAttachmentTransform = new GameObject(skinName).transform;
+					skinAttachmentTransform.parent = attachmentTransform;
+					spineAttachment = skinAttachmentTransform.gameObject.AddComponent<SpineAttachment>();
+				}
+				else
+				{
+					spineAttachment = skinAttachmentTransform.GetComponent<SpineAttachment>();
+				}
+
+				skinAttachmentTransform.localPosition = Vector3.zero;
+				skinAttachmentTransform.localRotation = Quaternion.identity;
+				skinAttachmentTransform.localScale = Vector3.one;
+			}
+			
+			return spineAttachment;
+		}
+		
+		private void ParseAttachment(string skinName, string slotName, string attachmentName, Dictionary<String, Object> root)
 		{
 			switch (GetString(root, "type", "region"))
 			{
 				case "region":
 				{
-					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Region);
-					attachment.Sprite = GetSprite(GetString(root, "name", name));
+					SpineAttachment attachment = GetOrCreateAttachment(skinName, slotName, attachmentName, SpineAttachment.AttachmentType.Region);
+					attachment.Sprite = GetSprite(GetString(root, "name", attachmentName));
 					attachment.PositionOffset = new Vector2(GetFloat(root, "x", 0f), GetFloat(root, "y", 0f));
 					attachment.ScaleOffset = new Vector2(GetFloat(root, "scaleX", 1f), GetFloat(root, "scaleY", 1f));
 					attachment.RotationOffset = GetFloat(root, "rotation", 0f);
+					attachment.Refresh();
 					break;
 				}
 
@@ -390,9 +390,9 @@ namespace SpineImporter
 					SpineMesh spineMesh = new SpineMesh();
 					spineMesh.Mesh = mesh;
 					spineMesh.Color = ToColor(GetString(root, "color", "ffffffff"));
-					spineMesh.Texture = GetTexture(GetString(root, "name", name));
+					spineMesh.Texture = GetTexture(GetString(root, "name", attachmentName));
 
-					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.Mesh);
+					SpineAttachment attachment = GetOrCreateAttachment(skinName, slotName, attachmentName, SpineAttachment.AttachmentType.Mesh);
 					attachment.Mesh = spineMesh;
 					
 					break;
@@ -400,7 +400,7 @@ namespace SpineImporter
 
 				case "skinnedmesh":
 				{
-					SpineSlot slot = GetSlot(name);
+					SpineAttachment attachment = GetOrCreateAttachment(skinName, slotName, attachmentName, SpineAttachment.AttachmentType.SkinnedMesh);
 
 					Vector2[] uvs = GetVector2Array(root, "uvs");
 					int[] triangles = GetIntArray(root, "triangles");
@@ -440,7 +440,7 @@ namespace SpineImporter
 							
 							if (j == 0)
 							{
-								Vector3 position = bone.transform.TransformPoint(x, y, slot.DrawOrder);
+								Vector3 position = bone.transform.TransformPoint(x, y, attachment.Slot.DrawOrder);
 								vertices.Add(position);
 							}
 
@@ -493,12 +493,11 @@ namespace SpineImporter
 					SpineMesh spineMesh = new SpineMesh();
 					spineMesh.Mesh = mesh;
 					spineMesh.Color = ToColor(GetString(root, "color", "ffffffff"));
-					spineMesh.Texture = GetTexture(GetString(root, "name", name));
+					spineMesh.Texture = GetTexture(GetString(root, "name", attachmentName));
 					spineMesh.Bones = bones.ToArray();
 
-					SpineAttachment attachment = skinSlot.GetOrCreateAttachment(name, SpineAttachment.AttachmentType.SkinnedMesh);
 					attachment.Mesh = spineMesh;
-
+					
 					break;
 				}
 			}
@@ -530,11 +529,14 @@ namespace SpineImporter
 						slot = slotTransform.GetComponent<SpineSlot>();
 					}
 
-					slot.Clear();
 					slot.DefaultAttachment = GetString(slotMap, "attachment", "");
 					slot.AdditiveBlending = GetBoolean(slotMap, "additive", false);
 					slot.Color = ToColor(GetString(slotMap, "color", "ffffffff"));
 					slot.DrawOrder = drawOrder;
+
+					slot.transform.localPosition = new Vector3(0, 0, drawOrder);
+					slot.transform.localScale = Vector3.one;
+					slot.transform.localRotation = Quaternion.identity;
 
 					drawOrder += _drawOrderOffset;
 				}
@@ -567,6 +569,18 @@ namespace SpineImporter
 					Transform bone = FindChildRecursive(_skeleton, boneName);
 
 					ParseBoneTimelines(clip, bone, (Dictionary<String, Object>)entry.Value);
+				}
+			}
+
+			if (map.ContainsKey("slots"))
+			{
+				foreach (KeyValuePair<String, Object> entry in (Dictionary<String, Object>)map["slots"])
+				{
+					String slotName = entry.Key;
+					
+					Transform slot = FindChildRecursive(_skeleton, slotName + " [slot]");
+					
+					ParseSlotTimelines(clip, slotName, slot, (Dictionary<String, Object>)entry.Value);
 				}
 			}
 
@@ -700,6 +714,40 @@ namespace SpineImporter
 			}
 
 			clip.EnsureQuaternionContinuity();
+		}
+
+		private void ParseSlotTimelines(AnimationClip clip, string slotName, Transform slot, Dictionary<String, Object> timelineMap)
+		{
+			foreach (KeyValuePair<String, Object> timelineEntry in timelineMap)
+			{
+				string timelineName = timelineEntry.Key;
+				var values = (List<Object>)timelineEntry.Value;
+				
+				switch (timelineName)
+				{
+					case "attachment":
+					{
+						for (int i = 0; i < slot.transform.childCount; i++)
+						{
+							Transform attachment = slot.transform.GetChild(i);
+
+							AnimationCurve attachmentCurve = new AnimationCurve();
+							
+							foreach (Dictionary<String, Object> valueMap in values)
+							{
+								float time = (float)valueMap["time"];
+								string name = (string)valueMap["name"];
+								
+								attachmentCurve.AddKey(new Keyframe(time, name == attachment.name ? 1f : 0f, float.PositiveInfinity, float.PositiveInfinity));
+							}
+
+							clip.SetCurve(GetPath(slot) + "/" + attachment.name, typeof(GameObject),"m_IsActive", attachmentCurve);
+						}
+
+						break;
+					}
+				}
+			}
 		}
 
 		private AnimationClip GetAndClearAnimationClip(string name, ref bool isNew)
