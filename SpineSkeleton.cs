@@ -74,6 +74,8 @@ namespace SpineImporter
 		[SerializeField] private string _dataPath;
 		[SerializeField] private string _activeSkin;
 		[SerializeField] private List<SpineEvent> _events;
+		[SerializeField] private Material _spriteMaterial;
+		[SerializeField] private Material _meshMaterial;
 
 		private Transform _skeleton;
 
@@ -99,6 +101,16 @@ namespace SpineImporter
 		{
 			get { return _activeSkin; }
 			set { _activeSkin = value; }
+		}
+
+		public Material SpriteMaterial
+		{
+			get { return _spriteMaterial; }
+		}
+
+		public Material MeshMaterial
+		{
+			get { return _meshMaterial; }
 		}
 
 		public void Refresh()

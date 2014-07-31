@@ -89,34 +89,40 @@ namespace SpineImporter
 		public void Refresh()
 		{
 			Clear();
+
+			SpineSkeleton skeleton = GetComponentInParent<SpineSkeleton>();
 			
 			switch (Type)
 			{
-				case SpineAttachment.AttachmentType.Region:
+				case AttachmentType.Region:
 				{
 					SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
 					spriteRenderer.sprite = Sprite;
+					if (skeleton.SpriteMaterial != null)
+					{
+						spriteRenderer.sharedMaterial = skeleton.SpriteMaterial;
+					}
 					transform.localPosition += new Vector3(PositionOffset.x, PositionOffset.y, 0);
 					transform.localEulerAngles = new Vector3(0, 0, RotationOffset);
 					transform.localScale = new Vector3(100 * ScaleOffset.x, 100 * ScaleOffset.y, 1);
 					break;
 				}
-				case SpineAttachment.AttachmentType.Mesh:
+				case AttachmentType.Mesh:
 				{
 					MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
 					MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 					meshFilter.sharedMesh = Mesh.Mesh;
-					Material material = new Material(Shader.Find("Unlit/Transparent"));
+					Material material = skeleton.MeshMaterial != null ? new Material(skeleton.MeshMaterial) : new Material(Shader.Find("Default/Diffuse"));
 					material.mainTexture = Mesh.Texture;
-					meshRenderer.material = material;
+					meshRenderer.sharedMaterial = material;
 					break;
 				}
-				case SpineAttachment.AttachmentType.SkinnedMesh:
+				case AttachmentType.SkinnedMesh:
 				{
 					SkinnedMeshRenderer meshRenderer = gameObject.AddComponent<SkinnedMeshRenderer>();
-					Material material = new Material(Shader.Find("Unlit/Transparent"));
+					Material material = skeleton.MeshMaterial != null ? new Material(skeleton.MeshMaterial) : new Material(Shader.Find("Default/Diffuse"));
 					material.mainTexture = Mesh.Texture;
-					meshRenderer.material = material;
+					meshRenderer.sharedMaterial = material;
 					meshRenderer.bones = Mesh.Bones;
 					meshRenderer.sharedMesh = Mesh.Mesh;
 					break;
