@@ -67,7 +67,9 @@ namespace SpineImporter
 	public class SpineSkeleton : MonoBehaviour
 	{
 
+#pragma warning disable 649
 		[SerializeField] private TextAsset _sourceData;
+		[SerializeField] private bool _drawBones = true;
 		[SerializeField] private float _scale = 0.01f;
 		[SerializeField] private float _drawOrderOffset = -1f;
 		[SerializeField] private string _imagePath;
@@ -76,6 +78,7 @@ namespace SpineImporter
 		[SerializeField] private List<SpineEvent> _events;
 		[SerializeField] private Material _spriteMaterial;
 		[SerializeField] private Material _meshMaterial;
+#pragma warning restore 649
 
 		private Transform _skeleton;
 
@@ -83,6 +86,12 @@ namespace SpineImporter
 		{
 			get { return _sourceData; }
 			set { _sourceData = value; }
+		}
+
+		public bool DrawBones
+		{
+			get { return _drawBones; }
+			set { _drawBones = value; }
 		}
 
 		public string ImagePath
