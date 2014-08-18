@@ -122,6 +122,100 @@ namespace SpineImporter
 			get { return _meshMaterial; }
 		}
 
+		public void SetSkin(string name)
+		{
+			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
+
+			foreach (SpineSlot slot in slots)
+			{
+				slot.SetAttachment(slot.DefaultAttachment);
+			}
+
+			SpineSkinPlaceholder[] skinPlaceholders = GetComponentsInChildren<SpineSkinPlaceholder>();
+
+			foreach (SpineSkinPlaceholder skinPlaceholder in skinPlaceholders)
+			{
+				skinPlaceholder.SetSkin(name);
+			}
+		}
+
+		public SpineSlot GetSlot(string name)
+		{
+			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
+
+			foreach (SpineSlot slot in slots)
+			{
+				if (slot.name == name + " [slot]")
+				{
+					return slot;
+				}
+			}
+
+			return null;
+		}
+
+		public SpineAttachment GetOrCreateAttachment(string skinName, string slotName, string attachmentName, SpineAttachment.AttachmentType type)
+		{
+			SpineSlot slot = GetSlot(slotName);
+
+			SpineAttachment spineAttachment = null;
+
+			if (skinName == "default")
+			{
+				Transform attachmentTransform = slot.transform.FindChild(attachmentName);
+
+				if (attachmentTransform == null)
+				{
+					attachmentTransform = new GameObject(attachmentName).transform;
+					attachmentTransform.parent = slot.transform;
+					spineAttachment = attachmentTransform.gameObject.AddComponent<SpineAttachment>();
+				}
+				else
+				{
+					spineAttachment = attachmentTransform.GetComponent<SpineAttachment>();
+				}
+
+				attachmentTransform.localPosition = Vector3.zero;
+				attachmentTransform.localRotation = Quaternion.identity;
+				attachmentTransform.localScale = Vector3.one;
+			}
+			else
+			{
+				Transform attachmentTransform = slot.transform.Find(attachmentName);
+				if (attachmentTransform == null)
+				{
+					attachmentTransform = new GameObject(attachmentName).transform;
+					attachmentTransform.parent = slot.transform;
+					attachmentTransform.gameObject.AddComponent<SpineSkinPlaceholder>();
+				}
+
+				attachmentTransform.localPosition = Vector3.zero;
+				attachmentTransform.localRotation = Quaternion.identity;
+				attachmentTransform.localScale = Vector3.one;
+
+				Transform skinAttachmentTransform = attachmentTransform.FindChild(skinName);
+
+				if (skinAttachmentTransform == null)
+				{
+					skinAttachmentTransform = new GameObject(skinName).transform;
+					skinAttachmentTransform.parent = attachmentTransform;
+					spineAttachment = skinAttachmentTransform.gameObject.AddComponent<SpineAttachment>();
+				}
+				else
+				{
+					spineAttachment = skinAttachmentTransform.GetComponent<SpineAttachment>();
+				}
+
+				skinAttachmentTransform.localPosition = Vector3.zero;
+				skinAttachmentTransform.localRotation = Quaternion.identity;
+				skinAttachmentTransform.localScale = Vector3.one;
+			}
+
+			return spineAttachment;
+		}
+		
+
+#if UNITY_EDITOR
 		public void Refresh()
 		{
 			if (PrefabUtility.GetPrefabType(gameObject) == PrefabType.Prefab)
@@ -166,23 +260,6 @@ namespace SpineImporter
 			}
 
 			SetSkin(_activeSkin);
-		}
-
-		public void SetSkin(string name)
-		{
-			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
-
-			foreach (SpineSlot slot in slots)
-			{
-				slot.SetAttachment(slot.DefaultAttachment);
-			}
-
-			SpineSkinPlaceholder[] skinPlaceholders = GetComponentsInChildren<SpineSkinPlaceholder>();
-
-			foreach (SpineSkinPlaceholder skinPlaceholder in skinPlaceholders)
-			{
-				skinPlaceholder.SetSkin(name);
-			}
 		}
 
 		private void ParseBones(Dictionary<String, Object> root)
@@ -245,21 +322,6 @@ namespace SpineImporter
 					}
 				}
 			}
-		}
-
-		private SpineSlot GetSlot(string name)
-		{
-			SpineSlot[] slots = GetComponentsInChildren<SpineSlot>();
-
-			foreach (SpineSlot slot in slots)
-			{
-				if (slot.name == name + " [slot]")
-				{
-					return slot;
-				}
-			}
-
-			return null;
 		}
 
 		private SpineEvent GetEvent(string name)
@@ -326,66 +388,6 @@ namespace SpineImporter
 			return null;
 		}
 
-		public SpineAttachment GetOrCreateAttachment(string skinName, string slotName, string attachmentName, SpineAttachment.AttachmentType type)
-		{
-			SpineSlot slot = GetSlot(slotName);
-
-			SpineAttachment spineAttachment = null;
-
-			if (skinName == "default")
-			{
-				Transform attachmentTransform = slot.transform.FindChild(attachmentName);
-
-				if (attachmentTransform == null)
-				{
-					attachmentTransform = new GameObject(attachmentName).transform;
-					attachmentTransform.parent = slot.transform;
-					spineAttachment = attachmentTransform.gameObject.AddComponent<SpineAttachment>();
-				}
-				else
-				{
-					spineAttachment = attachmentTransform.GetComponent<SpineAttachment>();
-				}
-
-				attachmentTransform.localPosition = Vector3.zero;
-				attachmentTransform.localRotation = Quaternion.identity;
-				attachmentTransform.localScale = Vector3.one;
-			}
-			else
-			{
-				Transform attachmentTransform = slot.transform.Find(attachmentName);
-				if (attachmentTransform == null)
-				{
-					attachmentTransform = new GameObject(attachmentName).transform;
-					attachmentTransform.parent = slot.transform;
-					attachmentTransform.gameObject.AddComponent<SpineSkinPlaceholder>();
-				}
-
-				attachmentTransform.localPosition = Vector3.zero;
-				attachmentTransform.localRotation = Quaternion.identity;
-				attachmentTransform.localScale = Vector3.one;
-				
-				Transform skinAttachmentTransform = attachmentTransform.FindChild(skinName);
-
-				if (skinAttachmentTransform == null)
-				{
-					skinAttachmentTransform = new GameObject(skinName).transform;
-					skinAttachmentTransform.parent = attachmentTransform;
-					spineAttachment = skinAttachmentTransform.gameObject.AddComponent<SpineAttachment>();
-				}
-				else
-				{
-					spineAttachment = skinAttachmentTransform.GetComponent<SpineAttachment>();
-				}
-
-				skinAttachmentTransform.localPosition = Vector3.zero;
-				skinAttachmentTransform.localRotation = Quaternion.identity;
-				skinAttachmentTransform.localScale = Vector3.one;
-			}
-			
-			return spineAttachment;
-		}
-		
 		private void ParseAttachment(string skinName, string slotName, string attachmentName, Dictionary<String, Object> root)
 		{
 			switch (GetString(root, "type", "region"))
@@ -881,11 +883,12 @@ namespace SpineImporter
 		
 			return values;
 		}
-		
-		public static Color ToColor(string hexString)
+
+		private static Color ToColor(string hexString)
 		{
 			return new Color(ToColor(hexString, 0), ToColor(hexString, 1), ToColor(hexString, 2), ToColor(hexString, 3));
 		}
+#endif
 
 		#region Helper functions taken from Spine-C# SkeletonJson.cs
 
